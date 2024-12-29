@@ -1,0 +1,17 @@
+#!/bin/bash
+# Copyright (c) IntechCore GmbH - All Rights Reserved
+# SPDX-License-Identifier: APACHE-2.0
+
+set -e
+
+POLARION_HISTORY_DB="${POLARION_HISTORY_DB:-polarion_history}"
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+  CREATE DATABASE ${POLARION_HISTORY_DB} OWNER ${POSTGRES_USER} ENCODING 'UTF8';
+  \c ${POLARION_HISTORY_DB}
+  CREATE EXTENSION IF NOT EXISTS dblink;
+  CREATE OR REPLACE LANGUAGE plpgsql;
+  \c ${POSTGRES_DB}
+  CREATE EXTENSION IF NOT EXISTS dblink;
+  CREATE OR REPLACE LANGUAGE plpgsql;
+EOSQL

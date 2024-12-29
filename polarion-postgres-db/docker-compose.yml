@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+
+  polariondb:
+    image: scalablecomponents/polarion-postgres-db:16-bookworm
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+
+  postgres-adminer:
+    depends_on:
+      - polariondb
+    image: adminer
+    restart: always
+    ports:
+      - 8077:8080

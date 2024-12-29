@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+
+  postgres-db:
+    image: scalablecomponents/polarion-postgres-db:16-bookworm
+    restart: always
+    shm_size: 512mb
+    volumes:
+      - ./data/postgres-data:/var/lib/postgresql/data
+
+  polarion2310:
+    depends_on: 
+      - postgres-db
+    image: scalablecomponents/polarion:0.1-bookworm
+    volumes:
+      - ./data/distr:/opt/distr/Polarion
+      - ./data/polarion-opt:/opt/polarion
+    environment:
+      DB_HOST: postgres-db
+    ports:
+      - 8899:80
+
+  postgres-adminer:
+    depends_on: 
+      - postgres-db
+    image: adminer
+    restart: always
+    ports:
+      - 8077:8080
+

@@ -1,0 +1,18 @@
+#!/usr/bin/expect -f
+# Copyright (c) IntechCore GmbH - All Rights Reserved
+# SPDX-License-Identifier: APACHE-2.0
+
+set timeout 60
+
+spawn ./manual_install.sh
+
+expect "Press \"Enter\" to continue with manual installation..."
+send "\r"
+
+expect "Do you want use a new local SVN repository with default settings?:"
+send "\r"
+
+expect "Please check settings in files"
+# exec >@stdout 2>@stderr sed -i "s/@@PG_PSWD@@/polarion/g; s/@@PG_PORT@@/5433/g; s/@localhost/@postgres-db/g" /opt/polarion/etc/polarion.properties
+send "\r"
+
