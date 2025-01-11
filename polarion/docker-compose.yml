@@ -1,7 +1,8 @@
-version: '3.9'
-
+# on winows use named volumes on perfomance reasons
+volumes:
+    polarion-opt:
+    
 services:
-
   postgres-db:
     image: scalablecomponents/polarion-postgres-db:16-bookworm
     restart: always
@@ -9,23 +10,18 @@ services:
     volumes:
       - ./data/postgres-data:/var/lib/postgresql/data
 
-  polarion2310:
+  polarion:
     depends_on: 
       - postgres-db
-    image: scalablecomponents/polarion:0.1-bookworm
+    image: scalablecomponents/polarion:0.2-bookworm
     volumes:
       - ./data/distr:/opt/distr/Polarion
-      - ./data/polarion-opt:/opt/polarion
+      - polarion-opt:/opt/polarion
+      - ./data/extensions:/opt/polarion/polarion/extensions
     environment:
       DB_HOST: postgres-db
     ports:
-      - 8899:80
-
-  postgres-adminer:
-    depends_on: 
-      - postgres-db
-    image: adminer
-    restart: always
-    ports:
-      - 8077:8080
-
+      - 8901:80
+# use extra_hosts to pass custom hosts (for example, for the SCell Spreadsheet Editor Plugin)
+#    extra_hosts:
+#        scell.web: 192.168.2.2

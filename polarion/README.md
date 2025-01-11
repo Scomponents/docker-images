@@ -5,14 +5,35 @@ The image does not contain any proprietary artifacts/distributives or informatio
 
 **[Docker Hub](https://hub.docker.com/r/scalablecomponents/polarion)**
 
+##### TAGS HISTORY
+- [0.1-bookworm](https://hub.docker.com/repository/docker/scalablecomponents/polarion/tags/0.1-bookworm/sha256:ff2c8d04cd409a2988fcd2a89606815f0759c51c56df87d1e34eb263ffa167bb) - init build, tested on Polarion® v2310
+- [0.2-bookworm](https://hub.docker.com/repository/docker/scalablecomponents/polarion/tags/0.2-bookworm/sha256:c33ce62643bb50e258af5a554cb066d3d6994f378f37ba14b5f72a24590899af) - fixed for Windows, add settings for SCell Spreadsheet Editor plugin, tested on Polarion® v2410
+
 ### How To Work
 The image required the following Docker volumes on the host side:
 ```
-      - ./data/distr:/opt/distr/Polarion
-      - ./data/polarion-opt:/opt/polarion
+services:
+    polarion:
+        volumes:
+          - ./data/distr:/opt/distr/Polarion
+          - ./data/polarion-opt:/opt/polarion
+          - ./data/extensions:/opt/polarion/polarion/extensions
 ```
+If run on Windows, use named volumes because of perfomance and compatibility issues:
+```
+volumes:
+    polarion-opt:
+
+services:
+    polarion:
+        volumes:
+          - ./data/distr:/opt/distr/Polarion
+          - polarion-opt:/opt/polarion
+          - ./data/extensions:/opt/polarion/polarion/extensions
+```
+
 - The `./data/distr` folder must contain the Polarion® installation distributive artifact named as `polarionALM_linux.zip` (this name can be changed by setting `POLARION_LINUX_DISTR_ZIP_NAME` environment variable);
-- The `./data/polarion-opt` will contain installed Polarion system files;
+- The `polarion-opt` volume will contain installed Polarion system files;
 - Installation process starts by checking `./data/polarion-opt/bin/polarion.init` file exist. Remove it to reinstall the product (if the Docker container was recreated);
 - There are following environment variables:
 

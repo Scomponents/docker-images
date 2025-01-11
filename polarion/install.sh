@@ -9,14 +9,6 @@ scriptPath="$(
 
 distrFolder="${scriptPath}/Polarion"
 
-requiredConfigsFolder="${distrFolder}/required_configs" # For success start if container was recreated
-
-function add_required_configs {
-  cp -r "${requiredConfigsFolder}"/* /
-  a2enconf polarion polarionSVN
-  apache2ctl restart
-}
-
 function stop_polarion {
   echo "Stopping Polarion..."
   /opt/polarion/bin/polarion.init stop
@@ -25,7 +17,7 @@ function stop_polarion {
 
 function run_polarion {
   echo "Running Polarion..."
-  add_required_configs
+  apache2ctl start
   mkdir -p /var/log/polarion
   chown -R polarion:polarion /var/log/polarion
   /opt/polarion/bin/polarion.init start
@@ -50,23 +42,28 @@ if [ ! -f "${distrFolder}/${POLARION_LINUX_DISTR_ZIP_NAME}" ]; then
   tail -f /dev/null
 fi
 
-cd "${distrFolder}"
+unpackedDistr="/opt/local/distr"
 
-rm -rf ./Polarion
-#rm -rf /opt/polarion/*
+echo "Creation unzipped distr folder: ${unpackedDistr} ..."
+mkdir -p "${unpackedDistr}"
 
-unzip -qq ./${POLARION_LINUX_DISTR_ZIP_NAME}
+unzip -qq "${distrFolder}/${POLARION_LINUX_DISTR_ZIP_NAME}" -d "${unpackedDistr}"
 
-cd "./Polarion"
+echo "Entering into the Polarion distr folder: ${unpackedDistr}/Polarion"
+cd "${unpackedDistr}/Polarion"
 
-mkdir -p "${requiredConfigsFolder}"
-cp -r ./libinstall/predefined/debian/* "${requiredConfigsFolder}/"
+echo "Copying the required files"
+cp -r ./libinstall/predefined/debian/* "/"
+a2enconf polarion polarionSVN
 
+echo "Copying the automated install scenario: ${scriptPath}/manual_install-runner.exp"
 cp "${scriptPath}/manual_install-runner.exp" ./
 
 export polarion_ignore_sql=yes
+echo "Running the automated install scenario, polarion_ignore_sql=${polarion_ignore_sql}"
 ./manual_install-runner.exp
 
+echo "Setting the DB env"
 DB_PORT="${DB_PORT:-5432}"
 DB_HOST="${DB_HOST:-localhost}"
 DB_USER_NAME="${DB_NAME:-polarion}"
@@ -76,15 +73,21 @@ WWW_DATA_USER="${WWW_DATA_USER:-'www-data'}"
 WWW_DATA_GROUP="${WWW_DATA_GROUP:-'www-data'}"
 
 sed -i "s/internalPG=polarion/internalPG=${DB_USER_NAME}/g; s/@@PG_PSWD@@/${DB_PASS}/g; s/@@PG_PORT@@/${DB_PORT}/g; s/@localhost/@${DB_HOST}/g" /opt/polarion/etc/polarion.properties
+echo "com.siemens.polarion.license.salt.enabled=false" >> /opt/polarion/etc/polarion.properties
+echo "com.siemens.polarion.rest.enabled=true" >> /opt/polarion/etc/polarion.properties
+echo "com.siemens.polarion.rest.security.restApiToken.enabled=true" >> /opt/polarion/etc/polarion.properties
+
 sed -i "s/v_web_user=/v_web_user=${WWW_DATA_USER}/g; s/v_web_group=/v_web_group=${WWW_DATA_GROUP}/g" /opt/polarion/etc/config.sh
+
+sed -i "/\(^[ ]*Header set Content-Security-Policy\)\([ ]*\)\"\(.*\)\(;\?\)\"/s//\1\2\"\3; font-src *\"/" /etc/apache2/conf-available/polarion.conf
+apache2ctl restart
 
 chown -R polarion:www-data /opt/polarion
 
 cd "${distrFolder}"
-rm -rf ./Polarion
-
-add_required_configs
 
 /opt/polarion/bin/polarion.init demo
+
+rm -rf "${unpackedDistr}"
 
 run_polarion
