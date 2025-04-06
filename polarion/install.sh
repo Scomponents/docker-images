@@ -9,6 +9,16 @@ scriptPath="$(
 
 distrFolder="${scriptPath}/Polarion"
 
+backupApacheConfPath="${distrFolder}/backup-to-restart"
+
+runFullReindex="${RUN_FULL_REINDEX:-false}"
+
+function ensure_all_to_run_installed {
+  cp -r "${backupApacheConfPath}"/* /
+  a2enconf polarion polarionSVN
+  ln -sf /opt/polarion/data /srv/polarion
+}
+
 function stop_polarion {
   echo "Stopping Polarion..."
   /opt/polarion/bin/polarion.init stop
@@ -17,9 +27,16 @@ function stop_polarion {
 
 function run_polarion {
   echo "Running Polarion..."
+  ensure_all_to_run_installed
   apache2ctl start
   mkdir -p /var/log/polarion
   chown -R polarion:polarion /var/log/polarion
+
+  if [ "$runFullReindex" = true ] ; then
+    echo "===== RUN FULL REINDEX ====="
+    /opt/polarion/bin/polarion.init reindex
+  fi
+
   /opt/polarion/bin/polarion.init start
   trap 'stop_polarion' SIGTERM
   sleep 3
@@ -81,6 +98,9 @@ sed -i "s/v_web_user=/v_web_user=${WWW_DATA_USER}/g; s/v_web_group=/v_web_group=
 
 sed -i "/\(^[ ]*Header set Content-Security-Policy\)\([ ]*\)\"\(.*\)\(;\?\)\"/s//\1\2\"\3; font-src *\"/" /etc/apache2/conf-available/polarion.conf
 apache2ctl restart
+
+mkdir -p "${backupApacheConfPath}/etc/apache2/conf-available"
+cp -r /etc/apache2/conf-available/* "${backupApacheConfPath}/etc/apache2/conf-available/"
 
 chown -R polarion:www-data /opt/polarion
 

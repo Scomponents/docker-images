@@ -13,13 +13,14 @@ services:
   polarion:
     depends_on: 
       - postgres-db
-    image: scalablecomponents/polarion:0.2-bookworm
+    image: scalablecomponents/polarion:0.3-bookworm
     volumes:
       - ./data/distr:/opt/distr/Polarion
       - polarion-opt:/opt/polarion
       - ./data/extensions:/opt/polarion/polarion/extensions
     environment:
       DB_HOST: postgres-db
+      RUN_FULL_REINDEX: false
     ports:
       - 8901:80
 # use extra_hosts to pass custom hosts (for example, for the SCell Spreadsheet Editor Plugin)
