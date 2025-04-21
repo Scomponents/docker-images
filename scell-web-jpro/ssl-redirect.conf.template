@@ -1,0 +1,29 @@
+cat << EOF
+<VirtualHost _default_:${APACHE_HTTPS_PORT}>
+        SSLEngine On
+        ServerName ${APACHE_HTTPS_HOST}
+        Include ${APACHE_HTTPS_COMMON_CONFIG}
+        SSLCertificateFile ${APACHE_SSL_CERTIFICATE_FILE}
+        SSLCertificateKeyFile ${APACHE_SSL_CERTIFICATE_KEY_FILE}
+
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/html
+
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+  RewriteEngine On
+  ProxyPreserveHost On
+  ProxyRequests Off
+  SSLProxyEngine On
+
+  # allow for upgrading to websockets
+  RewriteEngine On
+  RewriteCond %{HTTP:Upgrade} =websocket [NC]
+  RewriteRule /(.*)           ws://localhost:${JPRO_SERVER_PORT}/\$1 [P,L]
+  RewriteCond %{HTTP:Upgrade} !=websocket [NC]
+  RewriteRule /(.*)           http://localhost:${JPRO_SERVER_PORT}/\$1 [P,L]
+  ProxyPass / http://localhost:${JPRO_SERVER_PORT}/
+  ProxyPassReverse / http://localhost:${JPRO_SERVER_PORT}/
+</VirtualHost>
+EOF

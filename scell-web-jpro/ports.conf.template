@@ -1,0 +1,9 @@
+cat << EOF
+<IfModule ssl_module>
+        Listen 0.0.0.0:${APACHE_HTTPS_PORT} https
+</IfModule>
+
+<IfModule mod_gnutls.c>
+        Listen 0.0.0.0:${APACHE_HTTPS_PORT} https
+</IfModule>
+EOF
